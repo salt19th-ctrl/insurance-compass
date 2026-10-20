@@ -1,0 +1,17 @@
+{
+  "name": "my-insurance-compass",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "node scripts/preview.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.js",
+    "test:browser": "playwright test",
+    "test:api": "node scripts/check-live-api.mjs"
+  },
+  "dependencies": { "openai": "^6.0.0" },
+  "devDependencies": { "@playwright/test": "^1.56.0", "@axe-core/playwright": "^4.10.0" }
+}
