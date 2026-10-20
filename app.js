@@ -1,4 +1,4 @@
-import { CATEGORIES, fetchInsuranceContracts, flattenCoverages, formatAmount, formatDate } from "./services/insurance-service.js";
+import { CATEGORIES, fetchInsuranceContracts, flattenCoverages, summarizeCoverages, formatAmount, formatDate } from "./services/insurance-service.js";
 
 const $ = (selector) => document.querySelector(selector);
 const state = { contracts: [], loading: false, view: "insurance", category: "all", explanations: new Map(), aiBusy: false, aiCalls: 0, cooldownUntil: 0 };
@@ -49,6 +49,7 @@ $("#load-insurance").addEventListener("click", async () => {
     $("#results").hidden = false;
     $("#contract-count").textContent = `${contracts.length}건`;
     $("#coverage-count").textContent = `${flattenCoverages(contracts).length}개`;
+    renderDashboard();
     renderResults();
     setStatus(contracts.length
       ? `가상 계약 ${contracts.length}건을 불러왔습니다. 지급 조건은 모두 약관 확인이 필요합니다.`
@@ -67,6 +68,61 @@ $("#load-insurance").addEventListener("click", async () => {
   }
 });
 
+function selectCategory(category, moveToResults = false) {
+  state.category = category;
+  renderResults();
+  if (moveToResults) {
+    // 스크롤과 키보드 초점을 함께 이동합니다. 애니메이션 없이 결과를 바로 보여줍니다.
+    $("#result-title").focus({ preventScroll: true });
+    $(".result-heading").scrollIntoView({ block: "start", behavior: "instant" });
+  }
+}
+
+function renderDashboard() {
+  const cards = $("#dashboard-cards");
+  cards.replaceChildren();
+  for (const summary of summarizeCoverages(state.contracts)) {
+    const item = el("li");
+    const button = el("button", "dashboard-card");
+    button.type = "button";
+    button.dataset.dashboardCategory = summary.id;
+    button.setAttribute("aria-controls", "coverage-results");
+    const prefix = `dashboard-${summary.id}`;
+    button.setAttribute("aria-labelledby", `${prefix}-title ${prefix}-count`);
+    button.setAttribute("aria-describedby", `${prefix}-riders ${prefix}-missing ${prefix}-action`);
+    const top = el("span", "dashboard-card-top");
+    const icon = el("span", "dashboard-icon", summary.icon);
+    icon.setAttribute("aria-hidden", "true");
+    const title = el("span", "dashboard-card-title", summary.label);
+    title.id = `${prefix}-title`;
+    top.append(icon, title);
+    const count = el("span", "dashboard-count", `${summary.count}건`);
+    count.id = `${prefix}-count`;
+    const names = el("span", "dashboard-riders");
+    names.id = `${prefix}-riders`;
+    if (summary.count === 0) {
+      names.textContent = "조회된 항목 없음";
+    } else if (!summary.riderNames.length) {
+      names.textContent = "특약명 확인 필요";
+    } else {
+      names.append(el("span", "dashboard-riders-label", "조회된 주요 특약"));
+      summary.riderNames.slice(0, 3).forEach((name) => names.append(el("span", "dashboard-rider", name)));
+      if (summary.riderNames.length > 3) names.append(el("span", "dashboard-rider", `외 ${summary.riderNames.length - 3}개 특약`));
+    }
+    const missing = el("span", "dashboard-missing");
+    missing.id = `${prefix}-missing`;
+    missing.textContent = summary.count === 0
+      ? "가입 내역 확인 필요"
+      : summary.missingFields.length ? `확인 필요: ${summary.missingFields.join(" · ")}` : "지급 조건 확인 필요";
+    const action = el("span", "dashboard-action", "보장 항목 보기 →");
+    action.id = `${prefix}-action`;
+    button.append(top, count, names, missing, action);
+    button.addEventListener("click", () => selectCategory(summary.id, true));
+    item.append(button);
+    cards.append(item);
+  }
+}
+
 for (const category of CATEGORIES) {
   const button = el("button", "", `${category.icon} ${category.label}`);
   button.type = "button";
@@ -74,8 +130,7 @@ for (const category of CATEGORIES) {
   button.setAttribute("aria-label", `${category.label} 보장 필터`);
   button.setAttribute("aria-pressed", String(category.id === state.category));
   button.addEventListener("click", () => {
-    state.category = category.id;
-    renderResults();
+    selectCategory(category.id);
   });
   $("#category-filters").append(button);
 }
@@ -135,6 +190,11 @@ function makeCard({ contract, coverage: c }) {
 function renderResults() {
   document.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
   document.querySelectorAll("[data-category]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.category === state.category)));
+  document.querySelectorAll("[data-dashboard-category]").forEach((button) => {
+    const selected = button.dataset.dashboardCategory === state.category;
+    button.setAttribute("aria-pressed", String(selected));
+    button.querySelector(".dashboard-action").textContent = selected ? "✓ 선택됨 · 보장 항목 보기 →" : "보장 항목 보기 →";
+  });
   const entries = flattenCoverages(state.contracts, state.category);
   const selected = CATEGORIES.find((c) => c.id === state.category);
   $("#result-title").textContent = `${selected.label} 보장`;

@@ -58,6 +58,15 @@
         <span class="muted">실제 가입 내역을 조회하거나 저장하지 않습니다.</span>
       </div>
       <div id="results" hidden>
+        <section id="coverage-dashboard" class="coverage-dashboard" aria-labelledby="dashboard-title" aria-describedby="dashboard-help">
+          <div class="dashboard-heading">
+            <h3 id="dashboard-title">내 보장 한눈에</h3>
+            <span class="sample-label">전체 조회 결과 기준</span>
+          </div>
+          <p id="dashboard-help">유형을 누르면 해당 보장으로 이동합니다. 건수는 조회된 항목 수이며, 지급 여부나 보장 적정성을 뜻하지 않습니다.</p>
+          <ul id="dashboard-cards" class="dashboard-grid"></ul>
+          <p class="dashboard-note">뇌출혈·뇌졸중·뇌혈관질환, 급성심근경색·허혈성심장질환은 서로 다른 보장입니다. 각 특약의 지급 조건을 확인하세요.</p>
+        </section>
         <div class="summary-strip">
           <div><span>조회된 가상 계약</span><strong id="contract-count">0건</strong></div>
           <div><span>살펴볼 보장 항목</span><strong id="coverage-count">0개</strong></div>
@@ -72,7 +81,7 @@
         </div>
         <div id="category-filters" class="filters" role="group" aria-label="보장 유형 필터"></div>
         <p class="filter-help">뇌·심장 보장은 유형별로 모아 보되, 서로 다른 보장명과 지급 조건을 구분합니다.</p>
-        <div class="result-heading"><h3 id="result-title">전체 보장</h3><span id="result-count" role="status"></span></div>
+        <div class="result-heading"><h3 id="result-title" tabindex="-1">전체 보장</h3><span id="result-count" role="status"></span></div>
         <div id="coverage-results"></div>
         <details class="summary-table-box">
           <summary>▤ 보장 요약표 펼쳐보기</summary>

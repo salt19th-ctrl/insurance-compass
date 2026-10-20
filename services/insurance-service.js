@@ -52,6 +52,22 @@ export function flattenCoverages(contracts, category = "all") {
     .map((coverage) => ({ contract, coverage })));
 }
 
+// 건수는 계약별 보장 항목 수입니다. 특약명이 같아도 서로 다른 계약의 항목은 셉니다.
+// 금액을 합산하거나 보장 범위·적정성을 추정하지 않습니다.
+export function summarizeCoverages(contracts) {
+  const entries = flattenCoverages(contracts);
+  return CATEGORIES.filter((category) => category.id !== "all").map((category) => {
+    const matching = entries.filter(({ coverage }) => coverage.category === category.id);
+    const riderNames = [...new Set(matching.map(({ coverage }) => coverage.riderName).filter(isText))];
+    const missingFields = [];
+    if (matching.some(({ coverage }) => !isText(coverage.riderName))) missingFields.push("특약명");
+    if (matching.some(({ coverage }) => coverage.amount == null)) missingFields.push("가입금액");
+    if (matching.some(({ coverage }) => coverage.endDate == null)) missingFields.push("특약 만기");
+    if (matching.some(({ contract }) => !isText(contract.status) || contract.status === "확인 필요")) missingFields.push("계약 상태");
+    return { ...category, count: matching.length, riderNames, missingFields };
+  });
+}
+
 export function formatAmount(amount) {
   if (amount === null || amount === undefined) return "확인 필요";
   return amount >= 10000 && amount % 10000 === 0
